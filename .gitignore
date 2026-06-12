@@ -1,0 +1,19 @@
+# Nix build output symlinks
+result
+result-*
+
+# NixOS-WSL tarball (for initial import only; do not version)
+*.wsl
+nixos.wsl
+
+# Local personal config (copy local.nix.example → local.nix)
+local.nix
+
+# Local PowerShell helper scripts (machine-specific, not versioned)
+*.ps1
+
+# Editor / OS cruft
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

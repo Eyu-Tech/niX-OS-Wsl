@@ -1,0 +1,9 @@
+# local.nix.example — copy to local.nix and fill in your values.
+# local.nix is NOT versioned (.gitignore). This file is the template.
+
+{
+  git = {
+    userName  = "Your GitHub username";
+    userEmail = "your@email.com";
+  };
+}
