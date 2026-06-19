@@ -142,15 +142,50 @@ in
       luasnip
       cmp_luasnip
       # Treesitter (syntax / highlighting)
-      (nvim-treesitter.withPlugins (p: [ p.rust p.toml p.nix p.lua ]))
+      (nvim-treesitter.withPlugins (p: [
+        p.rust p.toml p.nix p.lua
+        p.yaml p.markdown p.markdown_inline p.bash p.json
+      ]))
       # Fuzzy finder inside the editor
       telescope-nvim
       plenary-nvim
       # Theme
       tokyonight-nvim
+      # File explorer
+      neo-tree-nvim
+      nvim-web-devicons
+      nui-nvim
+      # Git gutter
+      gitsigns-nvim
+      # Statusline
+      lualine-nvim
+      # Indentation guides
+      indent-blankline-nvim
+      # Surround text objects
+      nvim-surround
+      # Keymap discovery
+      which-key-nvim
+      # Debugging (DAP)
+      nvim-dap
+      nvim-dap-ui
+      nvim-dap-virtual-text
     ];
 
     extraLuaConfig = ''
+      vim.g.mapleader = " "
+      vim.g.maplocalleader = " "
+
+      -- Base options
+      vim.opt.number         = true
+      vim.opt.relativenumber = true
+      vim.opt.expandtab      = true
+      vim.opt.shiftwidth     = 4
+      vim.opt.tabstop        = 4
+      vim.opt.scrolloff      = 8
+      vim.opt.signcolumn     = "yes"
+      vim.opt.updatetime     = 250
+      vim.opt.termguicolors  = true
+
       -- Make rust-analyzer path from Nix known
       vim.g.rustaceanvim = {
         server = {
@@ -183,17 +218,253 @@ in
         highlight = { enable = true },
       })
 
-      -- Theme and editor settings
+      -- Theme
       vim.cmd.colorscheme('tokyonight')
-      vim.opt.number         = true
-      vim.opt.relativenumber = true
-      vim.opt.expandtab      = true
-      vim.opt.shiftwidth     = 4
+
+      -- LSP keymaps (set on attach)
+      vim.api.nvim_create_autocmd('LspAttach', {
+        callback = function(ev)
+          local opts = { buffer = ev.buf }
+          vim.keymap.set('n', 'gd',         vim.lsp.buf.definition,      opts)
+          vim.keymap.set('n', 'gD',         vim.lsp.buf.declaration,     opts)
+          vim.keymap.set('n', 'gi',         vim.lsp.buf.implementation,  opts)
+          vim.keymap.set('n', 'gr',         vim.lsp.buf.references,      opts)
+          vim.keymap.set('n', 'K',          vim.lsp.buf.hover,           opts)
+          vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action,     opts)
+          vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename,          opts)
+          vim.keymap.set('n', '<leader>f',  vim.lsp.buf.format,          opts)
+          vim.keymap.set('n', '[d', function() vim.diagnostic.goto_prev() end, opts)
+          vim.keymap.set('n', ']d', function() vim.diagnostic.goto_next() end, opts)
+          vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float,    opts)
+        end,
+      })
+
+      -- Telescope keymaps
+      local tb = require('telescope.builtin')
+      vim.keymap.set('n', '<leader>ff', tb.find_files,  { desc = 'Find files' })
+      vim.keymap.set('n', '<leader>fg', tb.live_grep,   { desc = 'Live grep' })
+      vim.keymap.set('n', '<leader>fb', tb.buffers,     { desc = 'Buffers' })
+      vim.keymap.set('n', '<leader>fh', tb.help_tags,   { desc = 'Help tags' })
+      vim.keymap.set('n', '<leader>fs', tb.lsp_document_symbols, { desc = 'Symbols' })
+
+      -- Neo-tree
+      require('neo-tree').setup({
+        window = { width = 30 },
+        filesystem = { follow_current_file = { enabled = true } },
+      })
+      vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Explorer' })
+
+      -- Gitsigns
+      require('gitsigns').setup({
+        on_attach = function(bufnr)
+          local gs = package.loaded.gitsigns
+          local o = { buffer = bufnr }
+          vim.keymap.set('n', ']c', gs.next_hunk,          o)
+          vim.keymap.set('n', '[c', gs.prev_hunk,          o)
+          vim.keymap.set('n', '<leader>hs', gs.stage_hunk, o)
+          vim.keymap.set('n', '<leader>hr', gs.reset_hunk, o)
+          vim.keymap.set('n', '<leader>hb', gs.blame_line, o)
+        end,
+      })
+
+      -- Lualine
+      require('lualine').setup({ options = { theme = 'tokyonight' } })
+
+      -- Indent blankline
+      require('ibl').setup()
+
+      -- Surround
+      require('nvim-surround').setup()
+
+      -- Which-key
+      require('which-key').setup()
+
+      -- DAP (Debugging)
+      local dap = require('dap')
+      local dapui = require('dapui')
+      require('nvim-dap-virtual-text').setup()
+      dapui.setup()
+      dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
+      dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
+      vim.keymap.set('n', '<F5>',       dap.continue,          { desc = 'DAP Continue' })
+      vim.keymap.set('n', '<F10>',      dap.step_over,         { desc = 'DAP Step Over' })
+      vim.keymap.set('n', '<F11>',      dap.step_into,         { desc = 'DAP Step Into' })
+      vim.keymap.set('n', '<F12>',      dap.step_out,          { desc = 'DAP Step Out' })
+      vim.keymap.set('n', '<leader>db', dap.toggle_breakpoint, { desc = 'DAP Breakpoint' })
+      vim.keymap.set('n', '<leader>du', dapui.toggle,          { desc = 'DAP UI toggle' })
     '';
   };
 
   # ─── Starship prompt (for ALL shells) ──────────────────────────────
-  programs.starship.enable = true;
+  programs.starship = {
+    enable = true;
+    settings = {
+      format = builtins.concatStringsSep "" [
+        "[](color_orange)"
+        "$os"
+        "$username"
+        "[](bg:color_yellow fg:color_orange)"
+        "$directory"
+        "[](fg:color_yellow bg:color_aqua)"
+        "$git_branch"
+        "$git_status"
+        "[](fg:color_aqua bg:color_blue)"
+        "$c"
+        "$cpp"
+        "$rust"
+        "$golang"
+        "$nodejs"
+        "$bun"
+        "$php"
+        "$java"
+        "$kotlin"
+        "$haskell"
+        "$python"
+        "[](fg:color_blue bg:color_bg3)"
+        "$docker_context"
+        "$conda"
+        "$pixi"
+        "[](fg:color_bg3 bg:color_bg1)"
+        "$time"
+        "[ ](fg:color_bg1)"
+        "$line_break$character"
+      ];
+
+      palette = "gruvbox_dark";
+
+      palettes.gruvbox_dark = {
+        color_fg0   = "#fbf1c7";
+        color_bg1   = "#3c3836";
+        color_bg3   = "#665c54";
+        color_blue  = "#458588";
+        color_aqua  = "#689d6a";
+        color_green = "#98971a";
+        color_orange = "#d65d0e";
+        color_purple = "#b16286";
+        color_red   = "#cc241d";
+        color_yellow = "#d79921";
+      };
+
+      profiles.claude-code = "\$claude_model \$git_branch \$claude_context\$claude_cost";
+
+      claude_model = {
+        format = "[$symbol$model]($style) ";
+        symbol = " ";
+        style  = "bold blue";
+      };
+
+      claude_context = {
+        format               = "[$gauge  $percentage]($style) ";
+        gauge_full_symbol    = "▰";
+        gauge_partial_symbol = "";
+        gauge_empty_symbol   = "▱";
+        gauge_width          = 10;
+        display = [
+          { threshold = 0;  hidden = false; }
+          { threshold = 30; style = "bold green"; }
+          { threshold = 60; style = "bold yellow"; }
+          { threshold = 80; style = "bold red"; }
+        ];
+      };
+
+      claude_cost = {
+        format = "[$symbol$cost]($style) ";
+        symbol = "";
+      };
+
+      username = {
+        show_always = true;
+        style_user  = "bg:color_orange fg:color_fg0";
+        style_root  = "bg:color_orange fg:color_fg0";
+        format      = "[ $user ]($style)";
+      };
+
+      directory = {
+        style              = "fg:color_fg0 bg:color_yellow";
+        format             = "[ $path ]($style)";
+        truncation_length  = 3;
+        truncation_symbol  = "…/";
+        substitutions = {
+          "Documents" = "󰈙 ";
+          "Downloads" = " ";
+          "Music"     = "󰝚 ";
+          "Pictures"  = " ";
+          "Developer" = "󰲋 ";
+        };
+      };
+
+      git_branch = {
+        symbol = "";
+        style  = "bg:color_aqua";
+        format = "[[ $symbol $branch ](fg:color_fg0 bg:color_aqua)]($style)";
+      };
+
+      git_status = {
+        style  = "bg:color_aqua";
+        format = "[[($all_status$ahead_behind )](fg:color_fg0 bg:color_aqua)]($style)";
+      };
+
+      time = {
+        disabled    = false;
+        time_format = "%R";
+        style       = "bg:color_bg1";
+        format      = "[[  $time ](fg:color_fg0 bg:color_bg1)]($style)";
+      };
+
+      line_break.disabled = false;
+
+      character = {
+        disabled                  = false;
+        success_symbol            = "[](bold fg:color_green)";
+        error_symbol              = "[](bold fg:color_red)";
+        vimcmd_symbol             = "[](bold fg:color_green)";
+        vimcmd_replace_one_symbol = "[](bold fg:color_purple)";
+        vimcmd_replace_symbol     = "[](bold fg:color_purple)";
+        vimcmd_visual_symbol      = "[](bold fg:color_yellow)";
+      };
+
+      os = {
+        disabled = false;
+        style    = "bg:color_orange fg:color_fg0";
+        symbols = {
+          Windows          = "󰍲";
+          Ubuntu           = "󰕈";
+          SUSE             = "";
+          Raspbian         = "󰐿";
+          Mint             = "󰣭";
+          Macos            = "󰀵";
+          Manjaro          = "";
+          Linux            = "󰌽";
+          Gentoo           = "󰣨";
+          Fedora           = "󰣛";
+          Alpine           = "";
+          Amazon           = "";
+          Android          = "";
+          Arch             = "󰣇";
+          Debian           = "󰣚";
+          Redhat           = "󱄛";
+          RedHatEnterprise = "󱄛";
+          Pop              = "";
+        };
+      };
+
+      nodejs  = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      bun     = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      c       = { symbol = " "; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      cpp     = { symbol = " "; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      rust    = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      golang  = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      php     = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      java    = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      kotlin  = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      haskell = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+      python  = { symbol = ""; style = "bg:color_blue"; format = "[[ $symbol( $version) ](fg:color_fg0 bg:color_blue)]($style)"; };
+
+      docker_context = { symbol = ""; style = "bg:color_bg3"; format = "[[ $symbol( $context) ](fg:#83a598 bg:color_bg3)]($style)"; };
+      conda          = { style  = "bg:color_bg3"; format = "[[ $symbol( $environment) ](fg:#83a598 bg:color_bg3)]($style)"; };
+      pixi           = { style  = "bg:color_bg3"; format = "[[ $symbol( $version)( $environment) ](fg:color_fg0 bg:color_bg3)]($style)"; };
+    };
+  };
 
   # ─── fzf — fuzzy finder ────────────────────────────────────────────
   programs.fzf = {

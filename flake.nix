@@ -2,8 +2,7 @@
   description = "EtheReoN — NixOS-WSL instance with Podman + Rust (declarative, reproducible)";
 
   inputs = {
-    # nixpkgs unstable — pin to "nixos-24.11" or similar if needed
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
 
     # The module that makes NixOS run under WSL2
     nixos-wsl = {
