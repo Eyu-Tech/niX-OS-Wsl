@@ -1,0 +1,89 @@
+
+
+# Claude Code starship profile — activated when STARSHIP_CONFIG points here.
+# Uses starship-claude script (martinemde/starship-claude) as data layer.
+# Env vars set by script: CLAUDE_AGENT_NAME, CLAUDE_CONTEXT, CLAUDE_RATE_5H,
+# CLAUDE_RATE_7D, CLAUDE_SESSION_TOPIC, CLAUDE_MODEL_NERD, CLAUDE_CACHE_WR.
+#
+xdg.configFile."starship-claude.toml".text = ''
+  "$schema" = 'https://starship.rs/config-schema.json'
+
+  palette = "custom"
+  add_newline = true
+
+  format = """
+  [](agent_bg)\
+  ''${env_var.CLAUDE_AGENT_NAME}\
+  [](agent_bg)\
+   \
+  [](ctx_bg)\
+  ''${env_var.CLAUDE_CONTEXT}\
+  ''${env_var.CLAUDE_RATE_5H}\
+  ''${env_var.CLAUDE_RATE_7D}\
+  [](ctx_bg)\
+  $line_break\
+  [⟩](fg:gold) \
+  ''${env_var.CLAUDE_SESSION_TOPIC}\
+  $line_break\
+  [](model_bg)\
+  ''${env_var.CLAUDE_MODEL_NERD}\
+  [](model_bg)\
+   \
+  ''${env_var.CLAUDE_CACHE_WR}\
+   \
+  $vim_mode\
+  """
+
+  [env_var.CLAUDE_AGENT_NAME]
+  variable = "CLAUDE_AGENT_NAME"
+  format = "[ $env_value ](bg:agent_bg fg:agent)"
+
+  [env_var.CLAUDE_CONTEXT]
+  variable = "CLAUDE_CONTEXT"
+  format = "[ ctx:$env_value tOk]($style)"
+  style = "bg:ctx_bg fg:ctx"
+
+  [env_var.CLAUDE_RATE_5H]
+  variable = "CLAUDE_RATE_5H"
+  format = "[ $env_value]($style)"
+  style = "bg:ctx_bg fg:rate"
+
+  [env_var.CLAUDE_RATE_7D]
+  variable = "CLAUDE_RATE_7D"
+  format = "[ $env_value ]($style)"
+  style = "bg:ctx_bg fg:rate"
+
+  [env_var.CLAUDE_SESSION_TOPIC]
+  variable = "CLAUDE_SESSION_TOPIC"
+  format = "[$env_value](fg:gold)"
+
+  [env_var.CLAUDE_MODEL_NERD]
+  variable = "CLAUDE_MODEL_NERD"
+  format = "[ $env_value ]($style)"
+  style = "bg:model_bg fg:model"
+
+  [env_var.CLAUDE_CACHE_WR]
+  variable = "CLAUDE_CACHE_WR"
+  format = "[↑$env_value](fg:green)"
+
+  [vim_mode]
+  format = "[$symbol](fg:green bold)"
+  normal_mode_symbol = "[NORMAL]"
+  insert_mode_symbol = "[INSERT]"
+  visual_mode_symbol = "[VISUAL]"
+  disabled = false
+
+  [line_break]
+  disabled = false
+
+  [palettes.custom]
+  agent    = "#D97757"
+  agent_bg = "#282828"
+  ctx      = "#d79921"
+  ctx_bg   = "#3c3836"
+  rate     = "#b16286"
+  model    = "#458588"
+  model_bg = "#282828"
+  gold     = "#d79921"
+  green    = "#689d6a"
+'';

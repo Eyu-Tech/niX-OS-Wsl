@@ -37,7 +37,8 @@
   # ─── User ──────────────────────────────────────────────────────────
   users.users.eyu = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ];  # sudo
+    extraGroups  = [ "wheel" ];
+    shell        = pkgs.nushell;
   };
 
   # ─── Gitea (declarative via Podman, root-managed systemd service) ──
